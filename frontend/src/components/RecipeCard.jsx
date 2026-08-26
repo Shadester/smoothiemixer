@@ -46,7 +46,10 @@ export function RecipeCard({ recipe, onFavorite, onRemove }) {
       </div>
       <ul className="recipe-items">
         {recipe.items.map((item, i) => (
-          <li key={i}>
+          <li
+            key={i}
+            title={`Protein ${Math.round(item.protein)}g, Carbs ${Math.round(item.carbs)}g, Fat ${Math.round(item.fat)}g, Sugar ${Math.round(item.sugar)}g, Fiber ${Math.round(item.fiber)}g`}
+          >
             <span className="item-amount">
               {formatUnits(item.units, item.unit_name)}
             </span>
