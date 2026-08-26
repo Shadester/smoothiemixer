@@ -235,9 +235,9 @@ def generate(req: GenerateRequest):
     ]
 
     if req.mode == "ai":
-        recipes = generate_with_claude(in_stock, req.count, req.calorie_target, required)
+        recipes = generate_with_claude(in_stock, req.count, req.calorie_target, required, req.high_protein)
     else:
-        recipes = generate_rule_based(in_stock, req.count, req.calorie_target, required)
+        recipes = generate_rule_based(in_stock, req.count, req.calorie_target, required, req.high_protein)
 
     if not recipes:
         raise HTTPException(

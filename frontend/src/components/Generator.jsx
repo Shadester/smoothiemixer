@@ -7,6 +7,7 @@ export function Generator({ inStockCount, ingredients = [] }) {
   const [calorieTarget, setCalorieTarget] = useState(400);
   const [mode, setMode] = useState("rule");
   const [requiredIds, setRequiredIds] = useState([]);
+  const [highProtein, setHighProtein] = useState(false);
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,6 +31,7 @@ export function Generator({ inStockCount, ingredients = [] }) {
         calorie_target: parseFloat(calorieTarget),
         mode,
         required_ingredient_ids: requiredIds,
+        high_protein: highProtein,
       });
       setRecipes(result);
     } catch (err) {
@@ -97,6 +99,15 @@ export function Generator({ inStockCount, ingredients = [] }) {
             AI (Claude)
           </label>
         </div>
+
+        <label className="mode-toggle-item">
+          <input
+            type="checkbox"
+            checked={highProtein}
+            onChange={(e) => setHighProtein(e.target.checked)}
+          />
+          High protein
+        </label>
 
         {inStockIngredients.length > 0 && (
           <div className="required-section">

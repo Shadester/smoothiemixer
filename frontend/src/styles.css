@@ -237,7 +237,8 @@ button { cursor: pointer; border: none; border-radius: 6px; font-size: .85rem; p
   text-transform: uppercase;
   letter-spacing: .04em;
 }
-.mode-toggle label {
+.mode-toggle label,
+.mode-toggle-item {
   display: flex;
   flex-direction: row;
   gap: .4rem;

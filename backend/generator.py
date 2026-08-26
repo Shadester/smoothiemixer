@@ -32,9 +32,9 @@ def _nearest_step(value: float, steps: list[float]) -> float:
     return min(steps, key=lambda s: abs(s - clamped))
 
 
-def _default_units(ing: Ingredient) -> float:
+def _default_units(ing: Ingredient, boost: bool = False) -> float:
     steps = _steps(ing)
-    return steps[len(steps) // 2]  # start in the middle of the range
+    return steps[-1] if boost else steps[len(steps) // 2]
 
 
 NUTRIENTS = ["calories", "protein", "carbs", "fat", "sugar", "fiber"]
@@ -126,11 +126,30 @@ TITLES = [
 ]
 
 
+def _boost_protein(
+    items: list[tuple[Ingredient, float]],
+    by_cat: dict[str, list[Ingredient]],
+) -> list[tuple[Ingredient, float]]:
+    """Max out any protein-source units, adding one if the recipe has none."""
+    items = [
+        (ing, _default_units(ing, boost=True) if ing.category == "protein" else units)
+        for ing, units in items
+    ]
+    if not any(ing.category == "protein" for ing, _ in items):
+        used = {ing.id for ing, _ in items}
+        candidates = [i for i in by_cat.get("protein", []) if i.id not in used]
+        if candidates:
+            best = max(candidates, key=lambda i: i.protein_per_100g)
+            items.append((best, _default_units(best, boost=True)))
+    return items
+
+
 def generate_rule_based(
     in_stock: list[Ingredient],
     count: int,
     calorie_target: float,
     required: list[Ingredient] | None = None,
+    high_protein: bool = False,
 ) -> list[Recipe]:
     by_cat: dict[str, list[Ingredient]] = {}
     for ing in in_stock:
@@ -166,6 +185,9 @@ def generate_rule_based(
         if not ok or not items:
             continue
 
+        if high_protein:
+            items = _boost_protein(items, by_cat)
+
         scaled = _scale_to_target(items, calorie_target)
         if scaled is None:
             continue
@@ -192,16 +214,17 @@ def generate_with_claude(
     count: int,
     calorie_target: float,
     required: list[Ingredient] | None = None,
+    high_protein: bool = False,
 ) -> list[Recipe]:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return generate_rule_based(in_stock, count, calorie_target, required)
+        return generate_rule_based(in_stock, count, calorie_target, required, high_protein)
 
     try:
-        return _call_claude(in_stock, count, calorie_target, api_key, required or [])
+        return _call_claude(in_stock, count, calorie_target, api_key, required or [], high_protein)
     except Exception as exc:
         print(f"Claude generation failed ({exc}), falling back to rule-based.")
-        return generate_rule_based(in_stock, count, calorie_target, required)
+        return generate_rule_based(in_stock, count, calorie_target, required, high_protein)
 
 
 def _call_claude(
@@ -210,6 +233,7 @@ def _call_claude(
     calorie_target: float,
     api_key: str,
     required: list[Ingredient] | None = None,
+    high_protein: bool = False,
 ) -> list[Recipe]:
     import anthropic
     required = required or []
@@ -235,6 +259,7 @@ Rules:
 - Each recipe must have a catchy title.
 - Do NOT use cups — use the ingredient's own unit.
 {f"- REQUIRED: Every recipe MUST include ALL of these ingredients (they may be used in any amount): {', '.join(f'{ing.name} (id={ing.id})' for ing in required)}." if required else ""}
+{"- HIGH PROTEIN: every recipe must include at least one protein source (protein powder, Greek yogurt, etc.) and should contain at least 20g of protein." if high_protein else ""}
 
 Respond ONLY with valid JSON in this exact format:
 {{

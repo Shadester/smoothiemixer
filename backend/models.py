@@ -44,6 +44,7 @@ class GenerateRequest(BaseModel):
     calorie_target: float = Field(gt=0)
     mode: Literal["rule", "ai"] = "rule"
     required_ingredient_ids: list[int] = Field(default_factory=list)
+    high_protein: bool = False
 
 
 class RecipeItem(BaseModel):
