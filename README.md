@@ -1,6 +1,13 @@
 # SmoothieMixer
 
-Web app to manage a home ingredient pantry and generate smoothie recipes with calorie targets.
+Web app to manage a home ingredient pantry and generate smoothie recipes that hit a calorie target — self-hosted, runs great on a Raspberry Pi.
+
+## Features
+
+- Track a pantry of ingredients with calories, macros, and stock status
+- Generate smoothie recipes for a target calorie count, either rule-based or via Claude ("AI mode")
+- FastAPI backend + React frontend, packaged as a single Docker image
+- SQLite storage in a named volume — no external database needed
 
 ## Quick start (Docker — Raspberry Pi)
 
@@ -54,3 +61,20 @@ npm run dev      # proxies /api to localhost:8000
 ```bash
 docker buildx build --platform linux/arm64 -t smoothiemixer:latest --load .
 ```
+
+---
+
+## API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/ingredients` | List pantry ingredients |
+| `POST` | `/api/ingredients` | Add an ingredient |
+| `PUT` | `/api/ingredients/{id}` | Update an ingredient |
+| `DELETE` | `/api/ingredients/{id}` | Remove an ingredient |
+| `GET` | `/api/ingredients/lookup` | Search ingredient nutrition data |
+| `POST` | `/api/generate` | Generate recipes for a calorie target |
+
+## Tech stack
+
+Python / FastAPI · React (Vite) · SQLite · Docker (multi-stage, multi-arch) · Anthropic API (optional)
