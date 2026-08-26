@@ -37,8 +37,16 @@ def _default_units(ing: Ingredient) -> float:
     return steps[len(steps) // 2]  # start in the middle of the range
 
 
+NUTRIENTS = ["calories", "protein", "carbs", "fat", "sugar", "fiber"]
+
+
+def _nutrient(ing: Ingredient, units: float, nutrient: str) -> float:
+    per_100g = getattr(ing, f"{nutrient}_per_100g")
+    return units * ing.grams_per_unit * per_100g / 100
+
+
 def _calories(ing: Ingredient, units: float) -> float:
-    return units * ing.grams_per_unit * ing.calories_per_100g / 100
+    return _nutrient(ing, units, "calories")
 
 
 def _scale_to_target(
@@ -86,10 +94,17 @@ def _build_recipe_items(items: list[tuple[Ingredient, float]]) -> list[RecipeIte
             units=units,
             unit_name=ing.unit_name,
             grams=round(units * ing.grams_per_unit, 1),
-            calories=round(units * ing.grams_per_unit * ing.calories_per_100g / 100, 1),
+            **{n: round(_nutrient(ing, units, n), 1) for n in NUTRIENTS},
         )
         for ing, units in items
     ]
+
+
+def _recipe_totals(items: list[tuple[Ingredient, float]]) -> dict[str, float]:
+    return {
+        f"total_{n}": round(sum(_nutrient(ing, units, n) for ing, units in items), 1)
+        for n in NUTRIENTS
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +170,6 @@ def generate_rule_based(
         if scaled is None:
             continue
 
-        total = round(sum(_calories(ing, u) for ing, u in scaled), 1)
         title_pool = [t for t in TITLES if t not in used_titles] or TITLES
         title = random.choice(title_pool)
         used_titles.add(title)
@@ -163,7 +177,7 @@ def generate_rule_based(
         recipes.append(Recipe(
             title=title,
             items=_build_recipe_items(scaled),
-            total_calories=total,
+            **_recipe_totals(scaled),
         ))
 
     return recipes
@@ -215,6 +229,7 @@ Available ingredients:
 Create {count} smoothie recipes, each targeting approximately {calorie_target:.0f} kcal.
 Rules:
 - Each smoothie uses a SUBSET of the available ingredients (not all of them).
+- Use AT MOST 7 ingredients per recipe (fewer is fine — simple smoothies are good).
 - Use realistic portion sizes: 150-250 ml for liquids, 50-150 g for gram-based fruits,
   1-2 for whole items like bananas, 1-2 tbsp for powders/seeds.
 - Each recipe must have a catchy title.
@@ -255,11 +270,14 @@ Respond ONLY with valid JSON in this exact format:
             items.append((ing, float(raw_item["units"])))
         if not items:
             continue
-        total = round(sum(_calories(ing, u) for ing, u in items), 1)
+        if len(items) > 7:
+            required_ids = {ing.id for ing in required}
+            items.sort(key=lambda pair: pair[0].id in required_ids or _calories(*pair), reverse=True)
+            items = items[:7]
         recipes.append(Recipe(
             title=raw_recipe["title"],
             items=_build_recipe_items(items),
-            total_calories=total,
+            **_recipe_totals(items),
         ))
 
     return recipes

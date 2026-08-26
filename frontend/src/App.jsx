@@ -3,6 +3,7 @@ import { api } from "./api";
 import { Pantry } from "./components/Pantry";
 import { Ingredients } from "./components/Ingredients";
 import { Generator } from "./components/Generator";
+import { Favorites } from "./components/Favorites";
 import "./styles.css";
 
 export default function App() {
@@ -44,6 +45,12 @@ export default function App() {
           >
             Ingredients
           </button>
+          <button
+            className={tab === "favorites" ? "tab active" : "tab"}
+            onClick={() => setTab("favorites")}
+          >
+            Favorites
+          </button>
         </nav>
       </header>
 
@@ -60,6 +67,7 @@ export default function App() {
         {tab === "generate" && (
           <Generator inStockCount={inStockCount} ingredients={ingredients} />
         )}
+        {tab === "favorites" && <Favorites />}
       </main>
     </div>
   );

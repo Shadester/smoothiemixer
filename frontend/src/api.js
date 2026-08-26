@@ -23,4 +23,9 @@ export const api = {
     lookup: (q) => request("GET", `/api/ingredients/lookup?q=${encodeURIComponent(q)}`),
   },
   generate: (params) => request("POST", "/api/generate", params),
+  favorites: {
+    list: () => request("GET", "/api/favorites"),
+    create: (recipe) => request("POST", "/api/favorites", recipe),
+    delete: (id) => request("DELETE", `/api/favorites/${id}`),
+  },
 };

@@ -132,7 +132,9 @@ export function Generator({ inStockCount, ingredients = [] }) {
 
       {recipes.length > 0 && (
         <div className="recipes-grid">
-          {recipes.map((r, i) => <RecipeCard key={i} recipe={r} />)}
+          {recipes.map((r, i) => (
+            <RecipeCard key={i} recipe={r} onFavorite={api.favorites.create} />
+          ))}
         </div>
       )}
     </div>

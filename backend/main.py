@@ -12,8 +12,15 @@ from fastapi.staticfiles import StaticFiles
 
 from db import db, fix_implausible_calories, init_db
 from generator import generate_rule_based, generate_with_claude
-from models import GenerateRequest, Ingredient, IngredientIn, IngredientLookup, Recipe
-from seed import seed
+from models import (
+    FavoriteRecipe,
+    GenerateRequest,
+    Ingredient,
+    IngredientIn,
+    IngredientLookup,
+    Recipe,
+)
+from seed import backfill_macros, seed
 
 app = FastAPI(title="SmoothieMixer")
 
@@ -29,6 +36,7 @@ app.add_middleware(
 def startup() -> None:
     init_db()
     seed()
+    backfill_macros()
     fix_implausible_calories()
 
 
@@ -136,14 +144,71 @@ def lookup_ingredient(q: str = Query(..., min_length=1)):
         except ValueError:
             serving_g = None
 
+        def _num(field: str) -> float | None:
+            value = nutriments.get(field)
+            return round(float(value), 1) if value is not None else None
+
         results.append(IngredientLookup(
             name=name,
             calories_per_100g=round(float(kcal or 0), 1),
+            protein_per_100g=_num("proteins_100g"),
+            carbs_per_100g=_num("carbohydrates_100g"),
+            fat_per_100g=_num("fat_100g"),
+            sugar_per_100g=_num("sugars_100g"),
+            fiber_per_100g=_num("fiber_100g"),
             suggested_grams_per_unit=round(serving_g, 1) if serving_g else None,
             serving_size_label=p.get("serving_size"),
         ))
 
     return results[:8]
+
+
+# ---------------------------------------------------------------------------
+# Favorites
+# ---------------------------------------------------------------------------
+
+def _row_to_favorite(row) -> FavoriteRecipe:
+    data = dict(row)
+    items = json.loads(data.pop("items"))
+    return FavoriteRecipe(items=items, **data)
+
+
+@app.get("/api/favorites", response_model=list[FavoriteRecipe])
+def list_favorites():
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM favorites ORDER BY created_at DESC"
+        ).fetchall()
+    return [_row_to_favorite(r) for r in rows]
+
+
+@app.post("/api/favorites", response_model=FavoriteRecipe, status_code=201)
+def create_favorite(recipe: Recipe):
+    with db() as conn:
+        cur = conn.execute(
+            """INSERT INTO favorites
+               (title, items, total_calories, total_protein, total_carbs,
+                total_fat, total_sugar, total_fiber)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                recipe.title,
+                json.dumps([item.model_dump() for item in recipe.items]),
+                recipe.total_calories, recipe.total_protein, recipe.total_carbs,
+                recipe.total_fat, recipe.total_sugar, recipe.total_fiber,
+            ),
+        )
+        row = conn.execute(
+            "SELECT * FROM favorites WHERE id=?", (cur.lastrowid,)
+        ).fetchone()
+    return _row_to_favorite(row)
+
+
+@app.delete("/api/favorites/{favorite_id}", status_code=204)
+def delete_favorite(favorite_id: int):
+    with db() as conn:
+        cur = conn.execute("DELETE FROM favorites WHERE id=?", (favorite_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Favorite not found")
 
 
 # ---------------------------------------------------------------------------
