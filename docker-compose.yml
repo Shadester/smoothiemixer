@@ -7,8 +7,8 @@ services:
       - smoothie-data:/data
     environment:
       - DB_PATH=/data/smoothiemixer.db
-      # Uncomment and set to enable AI mode:
-      # - ANTHROPIC_API_KEY=sk-ant-...
+      # Set ANTHROPIC_API_KEY in a .env file alongside this compose file to enable AI mode.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
     # Target Raspberry Pi (arm64). For 32-bit Pi: linux/arm/v7
     platform: linux/arm64
