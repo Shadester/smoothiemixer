@@ -299,6 +299,9 @@ Respond ONLY with valid JSON in this exact format:
     )
 
     raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.strip("`")
+        raw = raw.removeprefix("json").strip()
     data = json.loads(raw)
     by_id = {ing.id: ing for ing in in_stock}
 
