@@ -119,6 +119,11 @@ TEMPLATES: list[dict[str, Any]] = [
     {"slots": [("liquid", True), ("veggie", True), ("fruit", True), ("fat", False), ("extra", False)]},
 ]
 
+TITLE_ADJECTIVES = [
+    "Morning", "Golden", "Tropical", "Creamy", "Zesty", "Wild",
+    "Frosty", "Sunny", "Velvet", "Electric",
+]
+
 TITLE_NOUNS = [
     "Blast", "Boost", "Bliss", "Fusion", "Dream", "Punch",
     "Sunrise", "Refresher", "Delight", "Smoothie",
@@ -130,7 +135,9 @@ def _title_for(items: list[tuple[Ingredient, float]]) -> str:
     headline_cats = {"fruit", "veggie"}
     candidates = [(ing, u) for ing, u in items if ing.category in headline_cats] or items
     hero = max(candidates, key=lambda pair: _calories(*pair))[0]
-    return f"{hero.name} {random.choice(TITLE_NOUNS)}"
+    adjective = random.choice(TITLE_ADJECTIVES)
+    noun = random.choice(TITLE_NOUNS)
+    return f"{adjective} {hero.name} {noun}"
 
 
 def _boost_protein(
