@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { api } from "../api";
+import { usePersistedState } from "../usePersistedState";
 import { IngredientRow } from "./IngredientRow";
 
 const CATEGORIES = ["fruit", "liquid", "protein", "veggie", "fat", "sweetener", "extra"];
@@ -16,7 +17,10 @@ const EMPTY_FORM = {
 export function Ingredients({ ingredients, setIngredients }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState(null);
-  const [filterCat, setFilterCat] = useState("all");
+  const [filterCat, setFilterCat] = usePersistedState(
+    "smoothiemixer.ingredientsFilterCat",
+    "all"
+  );
 
   // Online lookup state
   const [lookupQuery, setLookupQuery] = useState("");

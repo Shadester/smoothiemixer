@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { api } from "../api";
+import { usePersistedState } from "../usePersistedState";
 
 const CATEGORIES = ["fruit", "liquid", "protein", "veggie", "fat", "sweetener", "extra"];
 
 export function Pantry({ ingredients, setIngredients }) {
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = usePersistedState("smoothiemixer.pantryFilter", "");
   const [error, setError] = useState(null);
 
   async function handleToggle(ingredient) {

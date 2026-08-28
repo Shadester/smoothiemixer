@@ -1,14 +1,24 @@
 import { useState } from "react";
 import { api } from "../api";
+import { usePersistedState } from "../usePersistedState";
 import { RecipeCard } from "./RecipeCard";
 
 export function Generator({ inStockCount, ingredients = [] }) {
-  const [count, setCount] = useState(7);
-  const [calorieTarget, setCalorieTarget] = useState(400);
-  const [mode, setMode] = useState("rule");
-  const [requiredIds, setRequiredIds] = useState([]);
-  const [highProtein, setHighProtein] = useState(false);
-  const [recipes, setRecipes] = useState([]);
+  const [count, setCount] = usePersistedState("smoothiemixer.count", 7);
+  const [calorieTarget, setCalorieTarget] = usePersistedState(
+    "smoothiemixer.calorieTarget",
+    400
+  );
+  const [mode, setMode] = usePersistedState("smoothiemixer.mode", "rule");
+  const [requiredIds, setRequiredIds] = usePersistedState(
+    "smoothiemixer.requiredIds",
+    []
+  );
+  const [highProtein, setHighProtein] = usePersistedState(
+    "smoothiemixer.highProtein",
+    false
+  );
+  const [recipes, setRecipes] = usePersistedState("smoothiemixer.lastRecipes", []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 

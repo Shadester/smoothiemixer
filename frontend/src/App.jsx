@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { usePersistedState } from "./usePersistedState";
 import { Pantry } from "./components/Pantry";
 import { Ingredients } from "./components/Ingredients";
 import { Generator } from "./components/Generator";
@@ -7,7 +8,7 @@ import { Favorites } from "./components/Favorites";
 import "./styles.css";
 
 export default function App() {
-  const [tab, setTab] = useState("generate");
+  const [tab, setTab] = usePersistedState("smoothiemixer.tab", "generate");
   const [ingredients, setIngredients] = useState([]);
   const [loadError, setLoadError] = useState(null);
 
@@ -17,6 +18,18 @@ export default function App() {
       .then(setIngredients)
       .catch((e) => setLoadError(e.message));
   }, []);
+
+  // Restore this tab's scroll position, and remember it as the user scrolls.
+  useEffect(() => {
+    const saved = sessionStorage.getItem(`smoothiemixer.scroll.${tab}`);
+    window.scrollTo(0, saved ? parseInt(saved, 10) : 0);
+
+    function onScroll() {
+      sessionStorage.setItem(`smoothiemixer.scroll.${tab}`, window.scrollY);
+    }
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [tab]);
 
   const inStockCount = ingredients.filter((i) => i.in_stock).length;
 
