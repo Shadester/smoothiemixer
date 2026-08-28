@@ -119,11 +119,18 @@ TEMPLATES: list[dict[str, Any]] = [
     {"slots": [("liquid", True), ("veggie", True), ("fruit", True), ("fat", False), ("extra", False)]},
 ]
 
-TITLES = [
-    "Morning Boost", "Green Power", "Berry Bliss", "Tropical Sunrise",
-    "Protein Punch", "Golden Hour", "Creamy Dream", "Jungle Fuel",
-    "Zen Garden", "Fiery Start",
+TITLE_NOUNS = [
+    "Blast", "Boost", "Bliss", "Fusion", "Dream", "Punch",
+    "Sunrise", "Refresher", "Delight", "Smoothie",
 ]
+
+
+def _title_for(items: list[tuple[Ingredient, float]]) -> str:
+    """Name the recipe after its biggest-calorie fruit/veggie (or whatever's biggest)."""
+    headline_cats = {"fruit", "veggie"}
+    candidates = [(ing, u) for ing, u in items if ing.category in headline_cats] or items
+    hero = max(candidates, key=lambda pair: _calories(*pair))[0]
+    return f"{hero.name} {random.choice(TITLE_NOUNS)}"
 
 
 def _boost_protein(
@@ -192,8 +199,11 @@ def generate_rule_based(
         if scaled is None:
             continue
 
-        title_pool = [t for t in TITLES if t not in used_titles] or TITLES
-        title = random.choice(title_pool)
+        title = _title_for(scaled)
+        tries = 0
+        while title in used_titles and tries < len(TITLE_NOUNS):
+            title = _title_for(scaled)
+            tries += 1
         used_titles.add(title)
 
         recipes.append(Recipe(
